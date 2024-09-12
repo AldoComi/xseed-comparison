@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -19,17 +20,22 @@ def calculate_stats(df):
     
     return cumulative_stats, per_90_stats
 
+def calculate_percentiles(stats):
+    return stats.rank(pct=True) * 100
+
 def plot_radar_chart(player1, player2, stats, attributes):
-    values1 = stats.loc[player1, attributes].values.flatten().tolist()
-    values2 = stats.loc[player2, attributes].values.flatten().tolist()
+    percentile_stats = calculate_percentiles(stats)
+    
+    values1 = percentile_stats.loc[player1, attributes].values.flatten().tolist()
+    values2 = percentile_stats.loc[player2, attributes].values.flatten().tolist()
     
     values1 += values1[:1]
     values2 += values2[:1]
     
-    angles = [n / float(len(attributes)) * 2 * 3.141593 for n in range(len(attributes))]
+    angles = [n / float(len(attributes)) * 2 * np.pi for n in range(len(attributes))]
     angles += angles[:1]
 
-    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(projection='polar'))
+    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection='polar'))
     ax.plot(angles, values1, 'o-', linewidth=2, label=player1)
     ax.fill(angles, values1, alpha=0.25)
     ax.plot(angles, values2, 'o-', linewidth=2, label=player2)
@@ -37,9 +43,12 @@ def plot_radar_chart(player1, player2, stats, attributes):
     
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(attributes)
-    ax.set_ylim(0, max(max(values1), max(values2)))
+    ax.set_ylim(0, 100)
+    ax.set_yticks([20, 40, 60, 80, 100])
+    ax.set_yticklabels(['20th', '40th', '60th', '80th', '100th'])
     
     plt.legend(loc='upper right', bbox_to_anchor=(0.1, 0.1))
+    plt.title(f"Percentile Comparison: {player1} vs {player2}")
     return fig
 
 def main():
@@ -70,6 +79,15 @@ def main():
         if st.button("Compare Players"):
             fig = plot_radar_chart(player1, player2, per_90_stats, attributes)
             st.pyplot(fig)
+
+        st.header("Detailed Percentile Comparison")
+        if st.button("Show Detailed Percentiles"):
+            percentile_stats = calculate_percentiles(per_90_stats)
+            comparison = pd.DataFrame({
+                player1: percentile_stats.loc[player1, attributes],
+                player2: percentile_stats.loc[player2, attributes]
+            }).round(2)
+            st.dataframe(comparison)
 
 if __name__ == "__main__":
     main()
