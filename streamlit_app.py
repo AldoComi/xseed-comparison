@@ -9,15 +9,9 @@ def load_data(file):
     return df
 
 def calculate_stats(df):
-    # Group by player and sum up all numeric columns
     cumulative_stats = df.groupby('Player').sum(numeric_only=True)
-    
-    # Calculate minutes played for each player
     minutes_played = cumulative_stats['Minutes']
-    
-    # Calculate per 90 minutes stats
     per_90_stats = cumulative_stats.div(minutes_played, axis=0) * 90
-    
     return cumulative_stats, per_90_stats
 
 def calculate_percentiles(stats):
@@ -49,6 +43,23 @@ def plot_radar_chart(player1, player2, stats, attributes):
     
     plt.legend(loc='upper right', bbox_to_anchor=(0.1, 0.1))
     plt.title(f"Percentile Comparison: {player1} vs {player2}")
+    return fig
+
+def plot_scatter(stats, x_var, y_var, highlight_players=None):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    sns.scatterplot(data=stats, x=x_var, y=y_var, ax=ax)
+    
+    if highlight_players:
+        highlights = stats.loc[highlight_players]
+        sns.scatterplot(data=highlights, x=x_var, y=y_var, color='red', s=100, ax=ax)
+        
+        for idx, row in highlights.iterrows():
+            ax.annotate(idx, (row[x_var], row[y_var]), xytext=(5, 5), textcoords='offset points')
+    
+    plt.title(f"{y_var} vs {x_var} (Per 90 Minutes)")
+    plt.xlabel(x_var)
+    plt.ylabel(y_var)
     return fig
 
 def main():
@@ -88,6 +99,16 @@ def main():
                 player2: percentile_stats.loc[player2, attributes]
             }).round(2)
             st.dataframe(comparison)
+
+        st.header("Scatter Plot Comparison")
+        x_var = st.selectbox("Select X-axis variable:", per_90_stats.columns.tolist(), index=per_90_stats.columns.get_loc("xG"))
+        y_var = st.selectbox("Select Y-axis variable:", per_90_stats.columns.tolist(), index=per_90_stats.columns.get_loc("xT"))
+        
+        highlight = st.multiselect("Highlight players (optional):", players, default=[player1, player2])
+        
+        if st.button("Generate Scatter Plot"):
+            fig = plot_scatter(per_90_stats, x_var, y_var, highlight)
+            st.pyplot(fig)
 
 if __name__ == "__main__":
     main()
