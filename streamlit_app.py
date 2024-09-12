@@ -65,7 +65,7 @@ def main():
 
         attributes = st.multiselect("Select attributes to compare:", 
                                     per_90_stats.columns.tolist(),
-                                    default=["Goals", "Assists", "Passes", "Tackles"])
+                                    default=["km_covered", "xG", "xT", "Sprints Distance (m)"])
 
         if st.button("Compare Players"):
             fig = plot_radar_chart(player1, player2, per_90_stats, attributes)
