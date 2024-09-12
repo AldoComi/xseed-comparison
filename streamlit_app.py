@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
+import plotly.express as px
 
 def load_data(file):
     df = pd.read_csv(file)
@@ -45,21 +45,25 @@ def plot_radar_chart(player1, player2, stats, attributes):
     plt.title(f"Percentile Comparison: {player1} vs {player2}")
     return fig
 
-def plot_scatter(stats, x_var, y_var, highlight_players=None):
-    fig, ax = plt.subplots(figsize=(10, 6))
-    
-    sns.scatterplot(data=stats, x=x_var, y=y_var, ax=ax)
+def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
+    fig = px.scatter(stats, x=x_var, y=y_var, hover_name=stats.index,
+                     hover_data={x_var: ':.2f', y_var: ':.2f'},
+                     title=f"{y_var} vs {x_var} (Per 90 Minutes)")
     
     if highlight_players:
         highlights = stats.loc[highlight_players]
-        sns.scatterplot(data=highlights, x=x_var, y=y_var, color='red', s=100, ax=ax)
+        fig.add_trace(px.scatter(highlights, x=x_var, y=y_var, hover_name=highlights.index,
+                                 hover_data={x_var: ':.2f', y_var: ':.2f'}).data[0])
         
-        for idx, row in highlights.iterrows():
-            ax.annotate(idx, (row[x_var], row[y_var]), xytext=(5, 5), textcoords='offset points')
+        for player in highlight_players:
+            fig.add_annotation(x=stats.loc[player, x_var],
+                               y=stats.loc[player, y_var],
+                               text=player,
+                               showarrow=True,
+                               arrowhead=2)
     
-    plt.title(f"{y_var} vs {x_var} (Per 90 Minutes)")
-    plt.xlabel(x_var)
-    plt.ylabel(y_var)
+    fig.update_traces(marker=dict(size=10))
+    fig.update_layout(height=600)
     return fig
 
 def main():
@@ -100,15 +104,15 @@ def main():
             }).round(2)
             st.dataframe(comparison)
 
-        st.header("Scatter Plot Comparison")
+        st.header("Interactive Scatter Plot Comparison")
         x_var = st.selectbox("Select X-axis variable:", per_90_stats.columns.tolist(), index=per_90_stats.columns.get_loc("xG"))
         y_var = st.selectbox("Select Y-axis variable:", per_90_stats.columns.tolist(), index=per_90_stats.columns.get_loc("xT"))
         
         highlight = st.multiselect("Highlight players (optional):", players, default=[player1, player2])
         
-        if st.button("Generate Scatter Plot"):
-            fig = plot_scatter(per_90_stats, x_var, y_var, highlight)
-            st.pyplot(fig)
+        if st.button("Generate Interactive Scatter Plot"):
+            fig = plot_interactive_scatter(per_90_stats, x_var, y_var, highlight)
+            st.plotly_chart(fig)
 
 if __name__ == "__main__":
     main()
