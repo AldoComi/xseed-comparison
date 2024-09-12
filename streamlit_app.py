@@ -117,14 +117,45 @@ def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
             height=600,
             font_family="Montserrat",
             title_font_family="Montserrat",
-            title_font_size=20
+            title_font_size=20,
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font_color='white'
         )
+        fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='Gray')
+        fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='Gray')
+        
         return fig
     except Exception as e:
         st.error(f"Error plotting interactive scatter: {str(e)}")
         return None
 
 def main():
+    # Set page config and custom theme
+    st.set_page_config(page_title="XSEED Analytics App", layout="wide")
+    
+    # Custom CSS to change multiselect box color and other styling
+    st.markdown("""
+    <style>
+    .stApp {
+        background-color: #0e1117;
+    }
+    div[data-baseweb="tag"] {
+        background-color: #00A9E0 !important;
+    }
+    div[data-baseweb="tag"] span[title="×"] {
+        color: white !important;
+    }
+    div[data-baseweb="multiselect"] > div {
+        background-color: #2b3035;
+    }
+    .stButton>button {
+        background-color: #00A9E0;
+        color: white;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     st.title("XSEED Analytics App")
 
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
