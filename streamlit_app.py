@@ -14,7 +14,7 @@ def calculate_stats(df):
     
     # List of columns that should not be transformed to per-90
     non_per_90_cols = [
-        'max_speed', 'Max Shot Power (km/h)', 'technical_load',
+        'Minutes','max_speed', 'Max Shot Power (km/h)', 'technical_load',
         'technical_load_left', 'technical_load_right', 'distance_per_minute (m)',
         'EDI (%)', 'Anaerobic Index (%)', 'Aerobic Index (%)'
     ]
