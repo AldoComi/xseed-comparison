@@ -12,17 +12,14 @@ def calculate_stats(df):
     cumulative_stats = df.groupby('Player').sum(numeric_only=True)
     minutes_played = cumulative_stats['Minutes']
     
-    # List of columns that should not be transformed to per-90
     non_per_90_cols = [
-        'Minutes','max_speed', 'Max Shot Power (km/h)', 'technical_load',
+        'max_speed', 'Max Shot Power (km/h)', 'technical_load',
         'technical_load_left', 'technical_load_right', 'distance_per_minute (m)',
         'EDI (%)', 'Anaerobic Index (%)', 'Aerobic Index (%)'
     ]
     
-    # Create a mask for columns that should be transformed to per-90
     per_90_mask = ~cumulative_stats.columns.isin(non_per_90_cols)
     
-    # Apply per-90 transformation only to relevant columns
     per_90_stats = cumulative_stats.copy()
     per_90_stats.loc[:, per_90_mask] = per_90_stats.loc[:, per_90_mask].div(minutes_played, axis=0) * 90
     
@@ -43,7 +40,8 @@ def plot_radar_chart(player1, player2, stats, attributes):
     angles = [n / float(len(attributes)) * 2 * np.pi for n in range(len(attributes))]
     angles += angles[:1]
 
-    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection='polar'))
+    plt.style.use('seaborn')
+    fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection='polar'))
     ax.plot(angles, values1, 'o-', linewidth=2, label=player1)
     ax.fill(angles, values1, alpha=0.25)
     ax.plot(angles, values2, 'o-', linewidth=2, label=player2)
@@ -56,7 +54,11 @@ def plot_radar_chart(player1, player2, stats, attributes):
     ax.set_yticklabels(['20th', '40th', '60th', '80th', '100th'])
     
     plt.legend(loc='upper right', bbox_to_anchor=(0.1, 0.1))
-    plt.title(f"Percentile Comparison: {player1} vs {player2}")
+    plt.title(f"Percentile Comparison: {player1} vs {player2}", fontsize=16, fontweight='bold')
+    
+    for label in (ax.get_xticklabels() + ax.get_yticklabels()):
+        label.set_fontname('Montserrat')
+    
     return fig
 
 def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
@@ -77,10 +79,32 @@ def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
                                arrowhead=2)
     
     fig.update_traces(marker=dict(size=10))
-    fig.update_layout(height=600)
+    fig.update_layout(
+        height=600,
+        font_family="Montserrat",
+        title_font_family="Montserrat",
+        title_font_size=20
+    )
     return fig
 
 def main():
+    # Set page config
+    st.set_page_config(page_title="Football Player Statistics App", layout="wide")
+
+    # Custom CSS to use Montserrat font
+    st.markdown(
+        """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+        html, body, [class*="css"] {
+            font-family: 'Montserrat', sans-serif;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.title("Football Player Statistics App")
 
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
