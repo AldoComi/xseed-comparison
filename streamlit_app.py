@@ -4,7 +4,131 @@ import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
 
-# ... (keep all previous functions as they were)
+def load_data(file):
+    try:
+        df = pd.read_csv(file)
+        required_columns = ['Player', 'Minutes']
+        if not all(col in df.columns for col in required_columns):
+            st.error(f"CSV file must contain at least these columns: {', '.join(required_columns)}")
+            return None
+        return df
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return None
+
+def calculate_stats(df, non_cumulative_cols):
+    try:
+        cumulative_df = df.drop(columns=non_cumulative_cols)
+        non_cumulative_df = df[['Player'] + non_cumulative_cols]
+        
+        cumulative_stats = cumulative_df.groupby('Player').sum(numeric_only=True)
+        non_cumulative_stats = non_cumulative_df.groupby('Player').mean()
+        
+        combined_stats = pd.concat([cumulative_stats, non_cumulative_stats], axis=1)
+        
+        minutes_played = combined_stats['Minutes']
+        per_90_stats = combined_stats.copy()
+        per_90_cols = [col for col in cumulative_stats.columns if col not in non_cumulative_cols]
+        per_90_stats[per_90_cols] = per_90_stats[per_90_cols].div(minutes_played, axis=0) * 90
+        
+        return combined_stats, per_90_stats
+    except Exception as e:
+        st.error(f"Error calculating stats: {str(e)}")
+        return None, None
+
+def calculate_percentiles(stats):
+    return stats.rank(pct=True) * 100
+
+def get_stat_type(col_name, non_cumulative_cols):
+    if col_name in non_cumulative_cols:
+        return col_name
+    else:
+        return f"{col_name} (per 90)"
+
+def plot_radar_chart(player1, player2, stats, attributes):
+    try:
+        percentile_stats = calculate_percentiles(stats)
+        
+        values1 = percentile_stats.loc[player1, attributes].values.flatten().tolist()
+        values2 = percentile_stats.loc[player2, attributes].values.flatten().tolist()
+        
+        values1 += values1[:1]
+        values2 += values2[:1]
+        
+        angles = [n / float(len(attributes)) * 2 * np.pi for n in range(len(attributes))]
+        angles += angles[:1]
+
+        fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection='polar'))
+        fig.patch.set_facecolor('black')  # Black background for the entire figure
+        ax.set_facecolor('black')  # Black background for the plot area
+        
+        ax.plot(angles, values1, 'o-', linewidth=2, label=player1, color='#00A9E0')  # Light blue
+        ax.fill(angles, values1, alpha=0.25, color='#00A9E0')
+        ax.plot(angles, values2, 'o-', linewidth=2, label=player2, color='#1CD097')  # Light green
+        ax.fill(angles, values2, alpha=0.25, color='#1CD097')
+        
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(attributes)
+        ax.set_ylim(0, 100)
+        ax.set_yticks([20, 40, 60, 80, 100])
+        ax.set_yticklabels(['20th', '40th', '60th', '80th', '100th'])
+        
+        plt.setp(ax.get_yticklabels(), color='white', fontname='Montserrat')
+        plt.setp(ax.get_xticklabels(), color='white', fontname='Montserrat')
+        
+        legend = plt.legend(loc='upper right', bbox_to_anchor=(0.1, 0.1))
+        plt.setp(legend.get_texts(), color='white', fontname='Montserrat')
+        
+        plt.title(f"Percentile Comparison: {player1} vs {player2}", fontsize=16, fontweight='bold', color='white', fontname='Montserrat')
+        
+        ax.grid(color='gray', alpha=0.5)
+        ax.spines['polar'].set_visible(False)
+        
+        return fig
+    except Exception as e:
+        st.error(f"Error plotting radar chart: {str(e)}")
+        return None
+
+def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
+    try:
+        fig = px.scatter(stats, x=x_var, y=y_var, hover_name=stats.index,
+                         hover_data={x_var: ':.2f', y_var: ':.2f'},
+                         title=f"{y_var} vs {x_var}")
+        
+        fig.update_traces(marker=dict(color='#00A9E0', size=10))
+        
+        if highlight_players:
+            highlights = stats.loc[highlight_players]
+            highlight_trace = px.scatter(highlights, x=x_var, y=y_var, hover_name=highlights.index,
+                                         hover_data={x_var: ':.2f', y_var: ':.2f'}).data[0]
+            
+            highlight_trace.marker.color = '#1CD097'
+            highlight_trace.marker.size = 15
+            fig.add_trace(highlight_trace)
+            
+            for player in highlight_players:
+                fig.add_annotation(x=stats.loc[player, x_var],
+                                   y=stats.loc[player, y_var],
+                                   text=player,
+                                   showarrow=True,
+                                   arrowhead=2)
+        
+        fig.update_layout(
+            height=600,
+            font_family="Montserrat",
+            title_font_family="Montserrat",
+            title_font_size=20,
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font_color='white'
+        )
+        fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='Gray')
+        fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='Gray')
+        
+        return fig
+    except Exception as e:
+        st.error(f"Error plotting interactive scatter: {str(e)}")
+        return None
 
 def main():
     # Set page config and custom theme
@@ -62,25 +186,10 @@ def main():
 
                 attribute_options = [get_stat_type(col, non_cumulative_cols) for col in per_90_stats.columns]
                 
-                # Define the default attributes
-                default_attributes = [
-                    "km_covered (per 90)", 
-                    "Sprints Distance (m) (per 90)", 
-                    "Sprints (> 21 km/h & > 0.5s) (per 90)", 
-                    "max_speed", 
-                    "touches_sx (per 90)", 
-                    "touches_dx (per 90)", 
-                    "xT (per 90)", 
-                    "xG (per 90)"
-                ]
-                
-                # Ensure all default attributes are in the options
-                default_attributes = [attr for attr in default_attributes if attr in attribute_options]
-                
                 selected_attributes = st.multiselect(
                     "Select attributes to compare:",
                     options=attribute_options,
-                    default=default_attributes
+                    default=attribute_options[:5]  # Select first 5 attributes by default
                 )
 
                 if st.button("Compare Players"):
