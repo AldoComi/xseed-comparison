@@ -125,7 +125,7 @@ def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
 
 def get_stat_type(col_name, non_cumulative_cols):
     if col_name in non_cumulative_cols:
-        return f"{col_name} (raw)"
+        return col_name
     else:
         return f"{col_name} (per 90)"
 
@@ -194,7 +194,7 @@ def main():
                         st.warning("Please select at least 3 attributes for comparison.")
                     else:
                         # Strip the type indicator for actual data access
-                        attributes = [attr.split(" (")[0] for attr in selected_attributes]
+                        attributes = [attr.split(" (per 90)")[0] for attr in selected_attributes]
                         fig = plot_radar_chart(player1, player2, per_90_stats, attributes)
                         if fig is not None:
                             st.pyplot(fig)
@@ -203,6 +203,7 @@ def main():
                 if st.button("Show Detailed Percentiles"):
                     try:
                         percentile_stats = calculate_percentiles(per_90_stats)
+                        attributes = [attr.split(" (per 90)")[0] for attr in selected_attributes]
                         comparison = pd.DataFrame({
                             player1: percentile_stats.loc[player1, attributes],
                             player2: percentile_stats.loc[player2, attributes]
@@ -222,8 +223,8 @@ def main():
                 y_var_full = st.selectbox("Select Y-axis variable:", y_var_options, index=y_var_index)
                 
                 # Strip the type indicator for actual data access
-                x_var = x_var_full.split(" (")[0]
-                y_var = y_var_full.split(" (")[0]
+                x_var = x_var_full.split(" (per 90)")[0]
+                y_var = y_var_full.split(" (per 90)")[0]
                 
                 highlight = st.multiselect("Highlight players (optional):", players, default=[player1, player2])
                 
