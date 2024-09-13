@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
+import plotly.graph_objects as go
 
 def load_data(file):
     try:
@@ -45,7 +46,7 @@ def get_stat_type(col_name, non_cumulative_cols):
     else:
         return f"{col_name} (per 90)"
 
-def plot_radar_chart(player1, player2, stats, attributes):
+def plot_radar_chart(player1, player2, stats, attributes, dark_mode):
     try:
         percentile_stats = calculate_percentiles(stats)
         
@@ -59,8 +60,8 @@ def plot_radar_chart(player1, player2, stats, attributes):
         angles += angles[:1]
 
         fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection='polar'))
-        fig.patch.set_facecolor('black')
-        ax.set_facecolor('black')
+        fig.patch.set_facecolor('black' if dark_mode else 'white')
+        ax.set_facecolor('black' if dark_mode else 'white')
         
         ax.plot(angles, values1, 'o-', linewidth=2, label=player1, color='#00A9E0')
         ax.fill(angles, values1, alpha=0.25, color='#00A9E0')
@@ -73,13 +74,14 @@ def plot_radar_chart(player1, player2, stats, attributes):
         ax.set_yticks([20, 40, 60, 80, 100])
         ax.set_yticklabels(['20th', '40th', '60th', '80th', '100th'])
         
-        plt.setp(ax.get_yticklabels(), color='white', fontname='Montserrat')
-        plt.setp(ax.get_xticklabels(), color='white', fontname='Montserrat')
+        text_color = 'white' if dark_mode else 'black'
+        plt.setp(ax.get_yticklabels(), color=text_color, fontname='Montserrat')
+        plt.setp(ax.get_xticklabels(), color=text_color, fontname='Montserrat')
         
         legend = plt.legend(loc='upper right', bbox_to_anchor=(0.1, 0.1))
-        plt.setp(legend.get_texts(), color='white', fontname='Montserrat')
+        plt.setp(legend.get_texts(), color=text_color, fontname='Montserrat')
         
-        plt.title(f"Percentile Comparison: {player1} vs {player2}", fontsize=16, fontweight='bold', color='white', fontname='Montserrat')
+        plt.title(f"Percentile Comparison: {player1} vs {player2}", fontsize=16, fontweight='bold', color=text_color, fontname='Montserrat')
         
         ax.grid(color='gray', alpha=0.5)
         ax.spines['polar'].set_visible(False)
@@ -89,7 +91,7 @@ def plot_radar_chart(player1, player2, stats, attributes):
         st.error(f"Error plotting radar chart: {str(e)}")
         return None
 
-def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
+def plot_interactive_scatter(stats, x_var, y_var, highlight_players, dark_mode):
     try:
         fig = px.scatter(stats, x=x_var, y=y_var, hover_name=stats.index,
                          hover_data={x_var: ':.2f', y_var: ':.2f'},
@@ -118,9 +120,9 @@ def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
             font_family="Montserrat",
             title_font_family="Montserrat",
             title_font_size=20,
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font_color='white'
+            plot_bgcolor='rgba(0,0,0,0)' if dark_mode else 'rgba(255,255,255,0)',
+            paper_bgcolor='rgba(0,0,0,0)' if dark_mode else 'rgba(255,255,255,0)',
+            font_color='white' if dark_mode else 'black'
         )
         fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='Gray')
         fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='Gray')
@@ -130,7 +132,7 @@ def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
         st.error(f"Error plotting interactive scatter: {str(e)}")
         return None
 
-def plot_distance_breakdown(data):
+def plot_distance_breakdown(data, dark_mode):
     intensity_columns = [
         'Standing (m) (0-0.3 km/h)',
         'Walking (m) (0.3-3 km/h)',
@@ -176,10 +178,64 @@ def plot_distance_breakdown(data):
         barmode='stack',
         height=600,
         font_family="Montserrat",
-        font_color='white',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
+        font_color='white' if dark_mode else 'black',
+        plot_bgcolor='rgba(0,0,0,0)' if dark_mode else 'rgba(255,255,255,0)',
+        paper_bgcolor='rgba(0,0,0,0)' if dark_mode else 'rgba(255,255,255,0)',
         legend_title_text='Intensity Level',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+    
+    fig.update_xaxes(title_font=dict(size=14), tickfont=dict(size=12))
+    fig.update_yaxes(title_font=dict(size=14), tickfont=dict(size=12))
+    
+    return fig
+
+def plot_max_speed_chart(data, dark_mode):
+    if 'max_speed' not in data.columns or 'max_speed_1st_half' not in data.columns or 'max_speed_2nd_half' not in data.columns:
+        st.error("Required max speed columns are missing from the data.")
+        return None
+    
+    # Sort the data by overall max speed in descending order
+    sorted_data = data.sort_values(by='max_speed', ascending=False)
+    
+    # Create the figure
+    fig = go.Figure()
+    
+    # Add bars for 1st half
+    fig.add_trace(go.Bar(
+        y=sorted_data['Player'],
+        x=sorted_data['max_speed_1st_half'],
+        name='1st Half',
+        orientation='h',
+        marker_color='#00A9E0'
+    ))
+    
+    # Add bars for 2nd half
+    fig.add_trace(go.Bar(
+        y=sorted_data['Player'],
+        x=sorted_data['max_speed_2nd_half'],
+        name='2nd Half',
+        orientation='h',
+        marker_color='#1CD097'
+    ))
+    
+    # Update the layout
+    fig.update_layout(
+        title='Maximum Speed by Half',
+        xaxis_title='Max. speed (km/h)',
+        yaxis_title='Player',
+        barmode='group',
+        height=600,
+        font_family="Montserrat",
+        font_color='white' if dark_mode else 'black',
+        plot_bgcolor='rgba(0,0,0,0)' if dark_mode else 'rgba(255,255,255,0)',
+        paper_bgcolor='rgba(0,0,0,0)' if dark_mode else 'rgba(255,255,255,0)',
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -197,26 +253,64 @@ def plot_distance_breakdown(data):
 def main():
     st.set_page_config(page_title="XSEED Analytics App", layout="wide")
     
-    st.markdown("""
+    # Initialize session state for dark mode
+    if 'dark_mode' not in st.session_state:
+        st.session_state.dark_mode = True
+
+    # Create a toggle for dark/bright mode
+    dark_mode = st.sidebar.checkbox("Dark Mode", value=st.session_state.dark_mode)
+
+    # Update session state
+    st.session_state.dark_mode = dark_mode
+
+    # Define CSS for dark and bright modes
+    dark_mode_css = """
     <style>
     .stApp {
         background-color: #0e1117;
-    }
-    div[data-baseweb="tag"] {
-        background-color: #00A9E0 !important;
-    }
-    div[data-baseweb="tag"] span[title="×"] {
-        color: white !important;
-    }
-    div[data-baseweb="multiselect"] > div {
-        background-color: #2b3035;
+        color: white;
     }
     .stButton>button {
         background-color: #00A9E0;
         color: white;
     }
+    div[data-baseweb="select"] > div {
+        background-color: #262730;
+        color: white;
+    }
+    div[data-baseweb="base-input"] > div {
+        background-color: #262730;
+        color: white;
+    }
     </style>
-    """, unsafe_allow_html=True)
+    """
+
+    bright_mode_css = """
+    <style>
+    .stApp {
+        background-color: white;
+        color: black;
+    }
+    .stButton>button {
+        background-color: #00A9E0;
+        color: white;
+    }
+    div[data-baseweb="select"] > div {
+        background-color: #f0f2f6;
+        color: black;
+    }
+    div[data-baseweb="base-input"] > div {
+        background-color: #f0f2f6;
+        color: black;
+    }
+    </style>
+    """
+
+    # Apply the appropriate CSS based on the mode
+    if dark_mode:
+        st.markdown(dark_mode_css, unsafe_allow_html=True)
+    else:
+        st.markdown(bright_mode_css, unsafe_allow_html=True)
 
     st.title("XSEED Analytics App")
 
@@ -298,3 +392,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
