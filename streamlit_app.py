@@ -130,11 +130,64 @@ def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
         st.error(f"Error plotting interactive scatter: {str(e)}")
         return None
 
+def plot_distance_breakdown(data):
+    intensity_columns = [
+        'Standing (m) (0-0.3 km/h)',
+        'Walking (m) (0.3-3 km/h)',
+        'Jogging (m) (3-8 km/h)',
+        'Low Intensity Running (m) (8-13 km/h)',
+        'Mid Intensity Running (m) (13-18 km/h)',
+        'High Intensity Running (m) (> 18 km/h)'
+    ]
+    
+    if not all(col in data.columns for col in intensity_columns):
+        st.error("Required distance breakdown columns are missing from the data.")
+        return None
+    
+    plot_data = data[['Player'] + intensity_columns].sort_values(by='Player')
+    plot_data_melted = plot_data.melt(id_vars=['Player'], var_name='Intensity', value_name='Distance')
+    
+    label_mapping = {
+        'Standing (m) (0-0.3 km/h)': 'Standing',
+        'Walking (m) (0.3-3 km/h)': 'Walking',
+        'Jogging (m) (3-8 km/h)': 'Jogging',
+        'Low Intensity Running (m) (8-13 km/h)': 'Low Intensity',
+        'Mid Intensity Running (m) (13-18 km/h)': 'Mid Intensity',
+        'High Intensity Running (m) (> 18 km/h)': 'High Intensity'
+    }
+    
+    plot_data_melted['Intensity'] = plot_data_melted['Intensity'].map(label_mapping)
+    
+    fig = px.bar(plot_data_melted, x='Distance', y='Player', color='Intensity', orientation='h',
+                 title='Distance Covered by Intensity Level',
+                 labels={'Distance': 'Distance covered (m)', 'Player': ''},
+                 color_discrete_sequence=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b'])
+    
+    fig.update_layout(
+        barmode='stack',
+        height=600,
+        font_family="Montserrat",
+        font_color='white',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        legend_title_text='Intensity Level',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+    
+    fig.update_xaxes(title_font=dict(size=14), tickfont=dict(size=12))
+    fig.update_yaxes(title_font=dict(size=14), tickfont=dict(size=12))
+    
+    return fig
+
 def main():
-    # Set page config and custom theme
     st.set_page_config(page_title="XSEED Analytics App", layout="wide")
     
-    # Custom CSS to change multiselect box color and other styling
     st.markdown("""
     <style>
     .stApp {
@@ -162,6 +215,11 @@ def main():
     if uploaded_file is not None:
         data = load_data(uploaded_file)
         if data is not None:
+            st.header("Distance Covered Breakdown")
+            distance_fig = plot_distance_breakdown(data)
+            if distance_fig is not None:
+                st.plotly_chart(distance_fig, use_container_width=True)
+            
             non_cumulative_cols = [
                 'max_speed', 'Max Shot Power (km/h)', 'technical_load',
                 'technical_load_left', 'technical_load_right', 'distance_per_minute (m)',
