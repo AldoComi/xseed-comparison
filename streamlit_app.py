@@ -159,6 +159,71 @@ def plot_radar_chart(player1, player2, stats, attributes):
         st.error(f"Error plotting radar chart: {str(e)}")
         return None
 
+# Function to plot distance breakdown
+def plot_distance_breakdown(data):
+    intensity_columns = [
+        'Standing (m) (0-0.3 km/h)',
+        'Walking (m) (0.3-3 km/h)',
+        'Jogging (m) (3-8 km/h)',
+        'Low Intensity Running (m) (8-13 km/h)',
+        'Mid Intensity Running (m) (13-18 km/h)',
+        'High Intensity Running (m) (> 18 km/h)'
+    ]
+    
+    if not all(col in data.columns for col in intensity_columns):
+        st.error("Required distance breakdown columns are missing from the data.")
+        return None
+    
+    plot_data = data[['Player'] + intensity_columns].sort_values(by='Player')
+    plot_data_melted = plot_data.melt(id_vars=['Player'], var_name='Intensity', value_name='Distance')
+    
+    label_mapping = {
+        'Standing (m) (0-0.3 km/h)': 'Standing',
+        'Walking (m) (0.3-3 km/h)': 'Walking',
+        'Jogging (m) (3-8 km/h)': 'Jogging',
+        'Low Intensity Running (m) (8-13 km/h)': 'Low Intensity',
+        'Mid Intensity Running (m) (13-18 km/h)': 'Mid Intensity',
+        'High Intensity Running (m) (> 18 km/h)': 'High Intensity'
+    }
+    
+    plot_data_melted['Intensity'] = plot_data_melted['Intensity'].map(label_mapping)
+    
+    color_scheme = {
+        'Standing': '#1a2f38',
+        'Walking': '#164a5b',
+        'Jogging': '#11698e',
+        'Low Intensity': '#119da4',
+        'Mid Intensity': '#13505b',
+        'High Intensity': '#0c7b93'
+    }
+    
+    fig = px.bar(plot_data_melted, x='Distance', y='Player', color='Intensity', orientation='h',
+                 title='Distance Covered by Intensity Level',
+                 labels={'Distance': 'Distance covered (m)', 'Player': ''},
+                 color_discrete_map=color_scheme)
+    
+    fig.update_layout(
+        barmode='stack',
+        height=600,
+        font_family="Montserrat",
+        font_color='white',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        legend_title_text='Intensity Level',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+    
+    fig.update_xaxes(title_font=dict(size=14), tickfont=dict(size=12))
+    fig.update_yaxes(title_font=dict(size=14), tickfont=dict(size=12))
+    
+    return fig
+
 # Main app logic
 def main():
     # Add a toggle for Day/Night mode
@@ -226,7 +291,13 @@ def main():
 
                             fig = plot_radar_chart(player1, player2, per_90_stats, attributes)
                             if fig is not None:
-                                                               st.pyplot(fig)
+                                st.pyplot(fig)
+
+                    # Distance Covered Breakdown chart
+                    st.header("Distance Covered Breakdown")
+                    distance_fig = plot_distance_breakdown(data)
+                    if distance_fig is not None:
+                        st.plotly_chart(distance_fig, use_container_width=True)
 
                     # Interactive Scatter Plot Comparison Section
                     st.header("Interactive Scatter Plot Comparison")
@@ -255,4 +326,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
