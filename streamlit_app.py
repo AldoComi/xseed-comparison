@@ -247,6 +247,12 @@ def main():
                 if distance_fig is not None:
                     st.plotly_chart(distance_fig, use_container_width=True)
 
+                # Maximum Speed Comparison chart
+                st.header("Maximum Speed Comparison")
+                max_speed_fig = plot_max_speed_chart(data)
+                if max_speed_fig is not None:
+                    st.plotly_chart(max_speed_fig, use_container_width=True)
+                
                 st.header("Player Comparison")
                 players = combined_stats.index.tolist()
                 player1 = st.selectbox("Select first player:", players)
