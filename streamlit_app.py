@@ -26,6 +26,15 @@ def load_css(mode):
             background-color: #00A9E0;
             color: white;
         }
+        /* Styling tables */
+        .dataframe {
+            color: white !important;
+            background-color: #0e1117 !important;
+        }
+        .stDataFrame {
+            background-color: #0e1117;
+            color: white;
+        }
         </style>
         """, unsafe_allow_html=True)
     else:
@@ -47,6 +56,15 @@ def load_css(mode):
         .stButton>button {
             background-color: #007bff;
             color: white;
+        }
+        /* Styling tables */
+        .dataframe {
+            color: black !important;
+            background-color: #f8f9fa !important;
+        }
+        .stDataFrame {
+            background-color: #ffffff;
+            color: black;
         }
         </style>
         """, unsafe_allow_html=True)
