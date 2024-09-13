@@ -26,15 +26,6 @@ def load_css(mode):
             background-color: #00A9E0;
             color: white;
         }
-        /* Styling tables */
-        .dataframe {
-            color: white !important;
-            background-color: #0e1117 !important;
-        }
-        .stDataFrame {
-            background-color: #0e1117;
-            color: white;
-        }
         </style>
         """, unsafe_allow_html=True)
     else:
@@ -56,15 +47,6 @@ def load_css(mode):
         .stButton>button {
             background-color: #007bff;
             color: white;
-        }
-        /* Styling tables */
-        .dataframe {
-            color: black !important;
-            background-color: #f8f9fa !important;
-        }
-        .stDataFrame {
-            background-color: #ffffff;
-            color: black;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -157,6 +139,48 @@ def plot_radar_chart(player1, player2, stats, attributes):
         return fig
     except Exception as e:
         st.error(f"Error plotting radar chart: {str(e)}")
+        return None
+
+# Function to plot interactive scatter
+def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
+    try:
+        fig = px.scatter(stats, x=x_var, y=y_var, hover_name=stats.index,
+                         hover_data={x_var: ':.2f', y_var: ':.2f'},
+                         title=f"{y_var} vs {x_var}")
+        
+        fig.update_traces(marker=dict(color='#00A9E0', size=10))
+        
+        if highlight_players:
+            highlights = stats.loc[highlight_players]
+            highlight_trace = px.scatter(highlights, x=x_var, y=y_var, hover_name=highlights.index,
+                                         hover_data={x_var: ':.2f', y_var: ':.2f'}).data[0]
+            
+            highlight_trace.marker.color = '#1CD097'
+            highlight_trace.marker.size = 15
+            fig.add_trace(highlight_trace)
+            
+            for player in highlight_players:
+                fig.add_annotation(x=stats.loc[player, x_var],
+                                   y=stats.loc[player, y_var],
+                                   text=player,
+                                   showarrow=True,
+                                   arrowhead=2)
+        
+        fig.update_layout(
+            height=600,
+            font_family="Montserrat",
+            title_font_family="Montserrat",
+            title_font_size=20,
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font_color='white'
+        )
+        fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='Gray')
+        fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='Gray')
+        
+        return fig
+    except Exception as e:
+        st.error(f"Error plotting interactive scatter: {str(e)}")
         return None
 
 # Function to plot distance breakdown
@@ -258,6 +282,12 @@ def main():
                     else:
                         st.dataframe(per_90_stats)
 
+                    # Distance Covered Breakdown chart
+                    st.header("Distance Covered Breakdown")
+                    distance_fig = plot_distance_breakdown(data)
+                    if distance_fig is not None:
+                        st.plotly_chart(distance_fig, use_container_width=True)
+
                     # Radar Chart Section
                     st.header("Player Comparison")
                     players = combined_stats.index.tolist()
@@ -269,8 +299,9 @@ def main():
                         "km_covered", "Sprints Distance (m)", "max_speed",
                         "xT", "xG", "technical_load", "passes_sx", "passes_dx"
                     ]
-
+                    
                     attribute_options = [get_stat_type(col, non_cumulative_cols) for col in per_90_stats.columns]
+
                     selected_attributes = st.multiselect(
                         "Select attributes to compare:",
                         options=attribute_options,
@@ -293,13 +324,6 @@ def main():
                             if fig is not None:
                                 st.pyplot(fig)
 
-                    # Distance Covered Breakdown chart
-                    st.header("Distance Covered Breakdown")
-                    distance_fig = plot_distance_breakdown(data)
-                    if distance_fig is not None:
-                        st.plotly_chart(distance_fig, use_container_width=True)
-
-                    # Interactive Scatter Plot Comparison Section
                     st.header("Interactive Scatter Plot Comparison")
                     x_var_options = attribute_options
                     y_var_options = attribute_options
@@ -326,3 +350,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
