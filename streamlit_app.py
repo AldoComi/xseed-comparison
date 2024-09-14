@@ -285,10 +285,20 @@ def main():
 
     st.title("XSEED Analytics App")
 
-    # Create 40 file upload buttons for each match
+    # Initialize session state to keep track of match uploads
+    if 'num_matches' not in st.session_state:
+        st.session_state['num_matches'] = 1
+
     uploaded_files = []
-    for match in range(1, 41):
+    for match in range(1, st.session_state['num_matches'] + 1):
         uploaded_files.append(st.file_uploader(f"Upload CSV for Match {match}", type="csv", key=f"match_{match}"))
+
+    # Button to add new match uploaders
+    if st.button("Add another match"):
+        if st.session_state['num_matches'] < 40:
+            st.session_state['num_matches'] += 1
+        else:
+            st.warning("Maximum number of 40 matches reached.")
 
     # Process the uploaded files
     if any(uploaded_files):
