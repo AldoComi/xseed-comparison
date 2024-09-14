@@ -13,14 +13,15 @@ def load_css(mode):
             background-color: #0e1117;
             color: white;
         }}
-        div[data-baseweb="tag"] {{
-            background-color: #00a9e0 !important;  /* Change tag color to #00a9e0 */
+        /* Changing multiselect dropdown tag color */
+        .css-1n76uvr .e1fqkh3o3 {{
+            background-color: #00a9e0 !important;  /* Custom tag color */
         }}
-        div[data-baseweb="tag"] span[title="×"] {{
-            color: white !important;
+        .css-1n76uvr .e1fqkh3o3 span {{
+            color: white !important; /* Custom text color for tags */
         }}
-        div[data-baseweb="multiselect"] > div {{
-            background-color: #2b3035;
+        .css-1n76uvr .e1fqkh3o2 {{
+            background-color: #2b3035 !important;  /* Dropdown background */
         }}
         .stButton>button {{
             background-color: #00A9E0;
@@ -35,14 +36,15 @@ def load_css(mode):
             background-color: #f8f9fa;
             color: black;
         }}
-        div[data-baseweb="tag"] {{
-            background-color: #00a9e0 !important;  /* Change tag color to #00a9e0 */
+        /* Changing multiselect dropdown tag color */
+        .css-1n76uvr .e1fqkh3o3 {{
+            background-color: #00a9e0 !important;  /* Custom tag color */
         }}
-        div[data-baseweb="tag"] span[title="×"] {{
-            color: white !important;
+        .css-1n76uvr .e1fqkh3o3 span {{
+            color: white !important; /* Custom text color for tags */
         }}
-        div[data-baseweb="multiselect"] > div {{
-            background-color: #ffffff;
+        .css-1n76uvr .e1fqkh3o2 {{
+            background-color: #ffffff !important;  /* Dropdown background */
         }}
         .stButton>button {{
             background-color: #007bff;
