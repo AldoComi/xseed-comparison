@@ -127,8 +127,8 @@ def plot_radar_chart(player1, player2, stats, attributes):
         ax.set_yticks([20, 40, 60, 80, 100])
         ax.set_yticklabels(['20th', '40th', '60th', '80th', '100th'])
 
-        plt.setp(ax.get_yticklabels(), fontname='Montserrat')
-        plt.setp(ax.get_xticklabels(), fontname='Montserrat')
+        plt.setp(ax.get_yticklabels(), color='white', fontname='Montserrat')
+        plt.setp(ax.get_xticklabels(), color='white', fontname='Montserrat')
         
         # Set legend with white text color
         legend = plt.legend(loc='upper right', bbox_to_anchor=(0.1, 0.1))
