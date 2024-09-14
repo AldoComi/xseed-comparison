@@ -14,13 +14,14 @@ def load_css(mode):
             color: white;
         }}
         /* Changing multiselect dropdown tag color */
-        .css-1n76uvr .e1fqkh3o3 {{
+        .stMultiSelect [role="listbox"] > div[data-baseweb="tag"] {{
             background-color: #00a9e0 !important;  /* Custom tag color */
+            color: white !important;               /* Custom text color */
         }}
-        .css-1n76uvr .e1fqkh3o3 span {{
-            color: white !important; /* Custom text color for tags */
+        .stMultiSelect [role="listbox"] > div[data-baseweb="tag"] > div {{
+            color: white !important;  /* Ensure text color inside tag remains white */
         }}
-        .css-1n76uvr .e1fqkh3o2 {{
+        .stMultiSelect [role="listbox"] > div {{
             background-color: #2b3035 !important;  /* Dropdown background */
         }}
         .stButton>button {{
@@ -37,13 +38,14 @@ def load_css(mode):
             color: black;
         }}
         /* Changing multiselect dropdown tag color */
-        .css-1n76uvr .e1fqkh3o3 {{
+        .stMultiSelect [role="listbox"] > div[data-baseweb="tag"] {{
             background-color: #00a9e0 !important;  /* Custom tag color */
+            color: white !important;               /* Custom text color */
         }}
-        .css-1n76uvr .e1fqkh3o3 span {{
-            color: white !important; /* Custom text color for tags */
+        .stMultiSelect [role="listbox"] > div[data-baseweb="tag"] > div {{
+            color: white !important;  /* Ensure text color inside tag remains white */
         }}
-        .css-1n76uvr .e1fqkh3o2 {{
+        .stMultiSelect [role="listbox"] > div {{
             background-color: #ffffff !important;  /* Dropdown background */
         }}
         .stButton>button {{
