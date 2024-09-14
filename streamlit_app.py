@@ -301,6 +301,32 @@ def plot_team_stat_trend(data, selected_stat, mode):
     )
     return fig
 
+# Function to plot player stat trend
+def plot_player_stat_trend(data, selected_stat, player, mode):
+    if mode == 'Match Stats':
+        # Extract stats for selected player per match
+        player_data = data[data['Player'] == player].set_index('Match')[selected_stat].reset_index()
+        title = f"{selected_stat.replace('_', ' ').capitalize()} Trend for {player} Across Matches"
+    else:
+        # Extract per 90 stats for selected player per match
+        player_data = data[data['Player'] == player].set_index('Match')[f"{selected_stat} (per 90)"].reset_index()
+        title = f"{selected_stat.replace('_', ' ').capitalize()} (Per 90) Trend for {player} Across Matches"
+
+    fig = px.line(player_data, x='Match', y=selected_stat, 
+                  title=title, 
+                  labels={selected_stat: f'{selected_stat.replace("_", " ").capitalize()}', 'Match': 'Matches'})
+    
+    fig.update_layout(
+        height=400,
+        font_family="Montserrat",
+        font_color='white',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        xaxis_title='Match',
+        yaxis_title=f'{selected_stat.replace("_", " ").capitalize()}'
+    )
+    return fig
+
 # Main app logic
 def main():
     # Add a toggle for Day/Night mode
@@ -359,6 +385,16 @@ def main():
                     team_stat_fig = plot_team_stat_trend(data, selected_stat, mode)
                     if team_stat_fig is not None:
                         st.plotly_chart(team_stat_fig, use_container_width=True)
+
+                    # Player Stat Trend with Stat Selector
+                    st.header("Player Stat Trend Across Matches")
+                    player = st.selectbox("Select player:", combined_stats.index.tolist())
+                    player_stat = st.selectbox("Select the statistic for the player:", available_stats)
+                    player_mode = st.radio("Select Player Mode:", ['Match Stats', 'Per 90 Stats'])
+
+                    player_stat_fig = plot_player_stat_trend(data, player_stat, player, player_mode)
+                    if player_stat_fig is not None:
+                        st.plotly_chart(player_stat_fig, use_container_width=True)
 
                     # Distance Covered Breakdown chart
                     st.header("Distance Covered Breakdown")
