@@ -275,14 +275,20 @@ def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
         st.error(f"Error plotting interactive scatter: {str(e)}")
         return None
 
-# Function to plot team distance trend (total distance covered per match)
-def plot_team_distance_trend(data):
-    # Group by match and calculate total distance covered for each match
-    match_distances = data.groupby('Match')['km_covered'].sum().reset_index()
+# Function to plot team stat trend with the ability to select the stat
+def plot_team_stat_trend(data, selected_stat, mode):
+    if mode == 'Total Stats':
+        # Group by match and calculate total selected statistic for each match
+        match_stats = data.groupby('Match')[selected_stat].sum().reset_index()
+        title = f"Total {selected_stat.replace('_', ' ').capitalize()} Covered by Team Across Matches"
+    else:
+        # Calculate average stat per player for each match
+        match_stats = data.groupby('Match')[selected_stat].mean().reset_index()
+        title = f"Average {selected_stat.replace('_', ' ').capitalize()} per Player Across Matches"
 
-    fig = px.bar(match_distances, x='Match', y='km_covered', 
-                 title='Total Distance Covered by Team Across Matches',
-                 labels={'km_covered': 'Total Distance Covered (km)', 'Match': 'Matches'})
+    fig = px.bar(match_stats, x='Match', y=selected_stat, 
+                 title=title,
+                 labels={selected_stat: f'{selected_stat.replace("_", " ").capitalize()}', 'Match': 'Matches'})
     
     fig.update_layout(
         height=400,
@@ -291,7 +297,7 @@ def plot_team_distance_trend(data):
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
         xaxis_title='Match',
-        yaxis_title='Distance Covered (km)'
+        yaxis_title=f'{selected_stat.replace("_", " ").capitalize()}'
     )
     return fig
 
@@ -344,17 +350,21 @@ def main():
                     else:
                         st.dataframe(per_90_stats)
 
+                    # Team Stat Trend with Stat Selector
+                    st.header("Team Stat Trend Across Matches")
+                    available_stats = ['km_covered', 'sprints_distance', 'max_speed']  # Add more stats as needed
+                    selected_stat = st.selectbox("Select the statistic to view:", available_stats)
+                    mode = st.radio("Select Mode:", ['Total Stats', 'Per Player'])
+
+                    team_stat_fig = plot_team_stat_trend(data, selected_stat, mode)
+                    if team_stat_fig is not None:
+                        st.plotly_chart(team_stat_fig, use_container_width=True)
+
                     # Distance Covered Breakdown chart
                     st.header("Distance Covered Breakdown")
                     distance_fig = plot_distance_breakdown(data)
                     if distance_fig is not None:
                         st.plotly_chart(distance_fig, use_container_width=True)
-
-                    # Team Distance Trend (new feature)
-                    st.header("Team Distance Covered Trend Across Matches")
-                    team_distance_fig = plot_team_distance_trend(data)
-                    if team_distance_fig is not None:
-                        st.plotly_chart(team_distance_fig, use_container_width=True)
 
                     # Radar Chart Section
                     st.header("Player Comparison")
