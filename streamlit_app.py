@@ -124,7 +124,6 @@ def plot_radar_chart(player1, player2, stats, attributes):
         ax.set_xticks(angles[:-1])
         ax.set_xticklabels(attributes, color='white')
         ax.set_ylim(0, 100)
-        ax.set_yticks([20, 40, 60, 80, 100])
         
         plt.setp(ax.get_yticklabels(), fontname='Montserrat')
         plt.setp(ax.get_xticklabels(), fontname='Montserrat')
