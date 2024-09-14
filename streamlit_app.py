@@ -166,6 +166,113 @@ def plot_radar_chart_plotly(player1, player2, stats, attributes, per_90_stats):
         st.error(f"Error plotting radar chart: {str(e)}")
         return None
 
+# Function to plot distance breakdown chart
+def plot_distance_breakdown(data):
+    intensity_columns = [
+        'Standing (m) (0-0.3 km/h)',
+        'Walking (m) (0.3-3 km/h)',
+        'Jogging (m) (3-8 km/h)',
+        'Low Intensity Running (m) (8-13 km/h)',
+        'Mid Intensity Running (m) (13-18 km/h)',
+        'High Intensity Running (m) (> 18 km/h)'
+    ]
+    
+    if not all(col in data.columns for col in intensity_columns):
+        st.error("Required distance breakdown columns are missing from the data.")
+        return None
+    
+    plot_data = data[['Player'] + intensity_columns].sort_values(by='Player')
+    plot_data_melted = plot_data.melt(id_vars=['Player'], var_name='Intensity', value_name='Distance')
+    
+    label_mapping = {
+        'Standing (m) (0-0.3 km/h)': 'Standing',
+        'Walking (m) (0.3-3 km/h)': 'Walking',
+        'Jogging (m) (3-8 km/h)': 'Jogging',
+        'Low Intensity Running (m) (8-13 km/h)': 'Low Intensity',
+        'Mid Intensity Running (m) (13-18 km/h)': 'Mid Intensity',
+        'High Intensity Running (m) (> 18 km/h)': 'High Intensity'
+    }
+    
+    plot_data_melted['Intensity'] = plot_data_melted['Intensity'].map(label_mapping)
+    
+    color_scheme = {
+        'Standing': '#1a2f38',
+        'Walking': '#164a5b',
+        'Jogging': '#11698e',
+        'Low Intensity': '#119da4',
+        'Mid Intensity': '#13505b',
+        'High Intensity': '#0c7b93'
+    }
+    
+    fig = px.bar(plot_data_melted, x='Distance', y='Player', color='Intensity', orientation='h',
+                 title='Distance Covered by Intensity Level',
+                 labels={'Distance': 'Distance covered (m)', 'Player': ''},
+                 color_discrete_map=color_scheme)
+    
+    fig.update_layout(
+        barmode='stack',
+        height=600,
+        font_family="Montserrat",
+        font_color='white',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        legend_title_text='Intensity Level',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+    
+    fig.update_xaxes(title_font=dict(size=14), tickfont=dict(size=12))
+    fig.update_yaxes(title_font=dict(size=14), tickfont=dict(size=12))
+    
+    return fig
+
+# Function to plot interactive scatter
+def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
+    try:
+        fig = px.scatter(stats, x=x_var, y=y_var, hover_name=stats.index,
+                         hover_data={x_var: ':.2f', y_var: ':.2f'},
+                         title=f"{y_var} vs {x_var}")
+        
+        fig.update_traces(marker=dict(color='#00A9E0', size=10))
+        
+        if highlight_players:
+            highlights = stats.loc[highlight_players]
+            highlight_trace = px.scatter(highlights, x=x_var, y=y_var, hover_name=highlights.index,
+                                         hover_data={x_var: ':.2f', y_var: ':.2f'}).data[0]
+            
+            highlight_trace.marker.color = '#1CD097'
+            highlight_trace.marker.size = 15
+            fig.add_trace(highlight_trace)
+            
+            for player in highlight_players:
+                fig.add_annotation(x=stats.loc[player, x_var],
+                                   y=stats.loc[player, y_var],
+                                   text=player,
+                                   showarrow=True,
+                                   arrowhead=2)
+        
+        fig.update_layout(
+            height=600,
+            font_family="Montserrat",
+            title_font_family="Montserrat",
+            title_font_size=20,
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font_color='white'
+        )
+        fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='Gray')
+        fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='Gray')
+        
+        return fig
+    except Exception as e:
+        st.error(f"Error plotting interactive scatter: {str(e)}")
+        return None
+
 # Main app logic
 def main():
     # Add a toggle for Day/Night mode
@@ -205,6 +312,12 @@ def main():
                     else:
                         st.dataframe(per_90_stats)
 
+                    # Distance Covered Breakdown chart
+                    st.header("Distance Covered Breakdown")
+                    distance_fig = plot_distance_breakdown(data)
+                    if distance_fig is not None:
+                        st.plotly_chart(distance_fig, use_container_width=True)
+
                     # Radar Chart Section
                     st.header("Player Comparison")
                     players = combined_stats.index.tolist()
@@ -240,6 +353,27 @@ def main():
                             fig = plot_radar_chart_plotly(player1, player2, combined_stats, attributes, per_90_stats)
                             if fig is not None:
                                 st.plotly_chart(fig)
+
+                    # Interactive Scatter Plot
+                    st.header("Interactive Scatter Plot Comparison")
+                    x_var_options = attribute_options
+                    y_var_options = attribute_options
+
+                    x_var_index = x_var_options.index("xG (per 90)") if "xG (per 90)" in x_var_options else 0
+                    y_var_index = y_var_options.index("xT (per 90)") if "xT (per 90)" in y_var_options else 0
+
+                    x_var_full = st.selectbox("Select X-axis variable:", x_var_options, index=x_var_index)
+                    y_var_full = st.selectbox("Select Y-axis variable:", y_var_options, index=y_var_index)
+
+                    x_var = x_var_full.split(" (per 90)")[0]
+                    y_var = y_var_full.split(" (per 90)")[0]
+
+                    highlight = st.multiselect("Highlight players (optional):", players, default=[player1, player2])
+
+                    if st.button("Generate Interactive Scatter Plot"):
+                        fig = plot_interactive_scatter(per_90_stats, x_var, y_var, highlight)
+                        if fig is not None:
+                            st.plotly_chart(fig)
 
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
