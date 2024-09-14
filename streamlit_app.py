@@ -7,47 +7,47 @@ import plotly.graph_objects as go
 # Function to load CSS based on mode
 def load_css(mode):
     if mode == "Night":
-        st.markdown("""
+        st.markdown(f"""
         <style>
-        .stApp {
+        .stApp {{
             background-color: #0e1117;
             color: white;
-        }
-        div[data-baseweb="tag"] {
-            background-color: #00A9E0 !important;
-        }
-        div[data-baseweb="tag"] span[title="×"] {
+        }}
+        div[data-baseweb="tag"] {{
+            background-color: #00a9e0 !important;  /* Change tag color to #00a9e0 */
+        }}
+        div[data-baseweb="tag"] span[title="×"] {{
             color: white !important;
-        }
-        div[data-baseweb="multiselect"] > div {
+        }}
+        div[data-baseweb="multiselect"] > div {{
             background-color: #2b3035;
-        }
-        .stButton>button {
+        }}
+        .stButton>button {{
             background-color: #00A9E0;
             color: white;
-        }
+        }}
         </style>
         """, unsafe_allow_html=True)
     else:
-        st.markdown("""
+        st.markdown(f"""
         <style>
-        .stApp {
+        .stApp {{
             background-color: #f8f9fa;
             color: black;
-        }
-        div[data-baseweb="tag"] {
-            background-color: #007bff !important;
-        }
-        div[data-baseweb="tag"] span[title="×"] {
-            color: black !important;
-        }
-        div[data-baseweb="multiselect"] > div {
+        }}
+        div[data-baseweb="tag"] {{
+            background-color: #00a9e0 !important;  /* Change tag color to #00a9e0 */
+        }}
+        div[data-baseweb="tag"] span[title="×"] {{
+            color: white !important;
+        }}
+        div[data-baseweb="multiselect"] > div {{
             background-color: #ffffff;
-        }
-        .stButton>button {
+        }}
+        .stButton>button {{
             background-color: #007bff;
             color: white;
-        }
+        }}
         </style>
         """, unsafe_allow_html=True)
 
@@ -107,11 +107,11 @@ def plot_radar_chart_plotly(player1, player2, stats, attributes, per_90_stats):
         
         # Custom hover data
         player1_hover = [
-            f"Data: {stats.loc[player1, attr]:.2f}<br>Per 90: {per_90_stats.loc[player1, attr]:.2f}<br>Percentile: {percentile_stats.loc[player1, attr]:.2f}"
+            f"Original: {stats.loc[player1, attr]:.2f}<br>Per 90: {per_90_stats.loc[player1, attr]:.2f}<br>Percentile: {percentile_stats.loc[player1, attr]:.2f}"
             for attr in attributes
         ]
         player2_hover = [
-            f"Data: {stats.loc[player2, attr]:.2f}<br>Per 90: {per_90_stats.loc[player2, attr]:.2f}<br>Percentile: {percentile_stats.loc[player2, attr]:.2f}"
+            f"Original: {stats.loc[player2, attr]:.2f}<br>Per 90: {per_90_stats.loc[player2, attr]:.2f}<br>Percentile: {percentile_stats.loc[player2, attr]:.2f}"
             for attr in attributes
         ]
 
@@ -368,4 +368,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
