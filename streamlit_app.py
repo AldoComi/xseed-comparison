@@ -1,3 +1,4 @@
+# Importing libraries
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -55,10 +56,11 @@ def load_data(files):
         if file is not None:
             try:
                 df = pd.read_csv(file)
-                required_columns = ['Player', 'Minutes']
+                required_columns = ['Player', 'Minutes', 'km_covered']
                 if not all(col in df.columns for col in required_columns):
                     st.error(f"CSV file '{file.name}' must contain at least these columns: {', '.join(required_columns)}")
                     return None
+                df['Match'] = f'M{files.index(file) + 1}'  # Add match label
                 cumulative_df = pd.concat([cumulative_df, df])
             except Exception as e:
                 st.error(f"Error loading data from '{file.name}': {str(e)}")
@@ -273,6 +275,26 @@ def plot_interactive_scatter(stats, x_var, y_var, highlight_players=None):
         st.error(f"Error plotting interactive scatter: {str(e)}")
         return None
 
+# Function to plot team distance trend (total distance covered per match)
+def plot_team_distance_trend(data):
+    # Group by match and calculate total distance covered for each match
+    match_distances = data.groupby('Match')['km_covered'].sum().reset_index()
+
+    fig = px.bar(match_distances, x='Match', y='km_covered', 
+                 title='Total Distance Covered by Team Across Matches',
+                 labels={'km_covered': 'Total Distance Covered (km)', 'Match': 'Matches'})
+    
+    fig.update_layout(
+        height=400,
+        font_family="Montserrat",
+        font_color='white',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        xaxis_title='Match',
+        yaxis_title='Distance Covered (km)'
+    )
+    return fig
+
 # Main app logic
 def main():
     # Add a toggle for Day/Night mode
@@ -327,6 +349,12 @@ def main():
                     distance_fig = plot_distance_breakdown(data)
                     if distance_fig is not None:
                         st.plotly_chart(distance_fig, use_container_width=True)
+
+                    # Team Distance Trend (new feature)
+                    st.header("Team Distance Covered Trend Across Matches")
+                    team_distance_fig = plot_team_distance_trend(data)
+                    if team_distance_fig is not None:
+                        st.plotly_chart(team_distance_fig, use_container_width=True)
 
                     # Radar Chart Section
                     st.header("Player Comparison")
