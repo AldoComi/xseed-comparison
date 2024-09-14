@@ -302,17 +302,17 @@ def plot_team_stat_trend(data, selected_stat, mode):
     return fig
 
 # Function to plot player stat trend
-def plot_player_stat_trend(data, selected_stat, player, mode):
+def plot_player_stat_trend(data, selected_stat, player, mode, per_90_stats):
     if mode == 'Match Stats':
         # Extract stats for selected player per match
         player_data = data[data['Player'] == player].set_index('Match')[selected_stat].reset_index()
         title = f"{selected_stat.replace('_', ' ').capitalize()} Trend for {player} Across Matches"
     else:
         # Extract per 90 stats for selected player per match
-        player_data = data[data['Player'] == player].set_index('Match')[f"{selected_stat} (per 90)"].reset_index()
+        player_data = per_90_stats[per_90_stats.index == player][selected_stat].reset_index()
         title = f"{selected_stat.replace('_', ' ').capitalize()} (Per 90) Trend for {player} Across Matches"
 
-    fig = px.line(player_data, x='Match', y=selected_stat, 
+    fig = px.bar(player_data, x='Match', y=selected_stat, 
                   title=title, 
                   labels={selected_stat: f'{selected_stat.replace("_", " ").capitalize()}', 'Match': 'Matches'})
     
@@ -392,7 +392,7 @@ def main():
                     player_stat = st.selectbox("Select the statistic for the player:", available_stats)
                     player_mode = st.radio("Select Player Mode:", ['Match Stats', 'Per 90 Stats'])
 
-                    player_stat_fig = plot_player_stat_trend(data, player_stat, player, player_mode)
+                    player_stat_fig = plot_player_stat_trend(data, player_stat, player, player_mode, per_90_stats)
                     if player_stat_fig is not None:
                         st.plotly_chart(player_stat_fig, use_container_width=True)
 
