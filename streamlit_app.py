@@ -96,7 +96,7 @@ def get_stat_type(col_name, non_cumulative_cols):
     else:
         return f"{col_name} (per 90)"
 
-# Function to plot radar chart
+# Function to plot radar chart with transparent background
 def plot_radar_chart(player1, player2, stats, attributes):
     try:
         percentile_stats = calculate_percentiles(stats)
@@ -111,28 +111,33 @@ def plot_radar_chart(player1, player2, stats, attributes):
         angles += angles[:1]
 
         fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection='polar'))
-        fig.patch.set_facecolor('black')
-        ax.set_facecolor('black')
+        fig.patch.set_alpha(0.0)  # Set figure background to transparent
+        ax.patch.set_alpha(0.0)   # Set axes background to transparent
         
+        # Plot the lines and fill areas
         ax.plot(angles, values1, 'o-', linewidth=2, label=player1, color='#00A9E0')
         ax.fill(angles, values1, alpha=0.25, color='#00A9E0')
         ax.plot(angles, values2, 'o-', linewidth=2, label=player2, color='#1CD097')
         ax.fill(angles, values2, alpha=0.25, color='#1CD097')
-        
+
+        # Setting the labels and grid
         ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(attributes)
+        ax.set_xticklabels(attributes, color='white')
         ax.set_ylim(0, 100)
         ax.set_yticks([20, 40, 60, 80, 100])
-        ax.set_yticklabels(['20th', '40th', '60th', '80th', '100th'])
+        ax.set_yticklabels(['20th', '40th', '60th', '80th', '100th'], color='white')
         
-        plt.setp(ax.get_yticklabels(), color='white', fontname='Montserrat')
-        plt.setp(ax.get_xticklabels(), color='white', fontname='Montserrat')
+        plt.setp(ax.get_yticklabels(), fontname='Montserrat')
+        plt.setp(ax.get_xticklabels(), fontname='Montserrat')
         
+        # Set legend with white text color
         legend = plt.legend(loc='upper right', bbox_to_anchor=(0.1, 0.1))
         plt.setp(legend.get_texts(), color='white', fontname='Montserrat')
-        
+
+        # Set the title of the chart
         plt.title(f"Percentile Comparison: {player1} vs {player2}", fontsize=16, fontweight='bold', color='white', fontname='Montserrat')
-        
+
+        # Grid color
         ax.grid(color='gray', alpha=0.5)
         ax.spines['polar'].set_visible(False)
         
