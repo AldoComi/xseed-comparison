@@ -72,21 +72,22 @@ def load_data(files):
 def calculate_stats(df, non_cumulative_cols):
     try:
         cumulative_df = df.drop(columns=non_cumulative_cols)
-        non_cumulative_df = df[['Player', 'Match'] + non_cumulative_cols]  # Preserve 'Match'
+        non_cumulative_df = df[['Player'] + non_cumulative_cols]
         
         # Cumulative Stats: Summing values across all matches
-        cumulative_stats = cumulative_df.groupby(['Player', 'Match']).sum(numeric_only=True)
+        cumulative_stats = cumulative_df.groupby('Player').sum(numeric_only=True)
         
         # Non-Cumulative Stats: Averaging the non-cumulative columns
-        non_cumulative_stats = non_cumulative_df.groupby(['Player', 'Match']).mean()
-
+        non_cumulative_stats = non_cumulative_df.groupby('Player').mean()
+        
         # Merging cumulative and non-cumulative stats
         combined_stats = pd.concat([cumulative_stats, non_cumulative_stats], axis=1)
         
         # Calculating per-90 stats based on total cumulative minutes
+        minutes_played = combined_stats['Minutes']
         per_90_stats = combined_stats.copy()
         per_90_cols = [col for col in cumulative_stats.columns if col not in non_cumulative_cols]
-        per_90_stats[per_90_cols] = per_90_stats[per_90_cols].div(combined_stats['Minutes'], axis=0) * 90
+        per_90_stats[per_90_cols] = per_90_stats[per_90_cols].div(minutes_played, axis=0) * 90
         
         return combined_stats, per_90_stats
     except Exception as e:
@@ -301,20 +302,19 @@ def plot_team_stat_trend(data, selected_stat, mode):
     return fig
 
 # Function to plot player stat trend
-def plot_player_stat_trend(data, selected_stat, player, mode):
+def plot_player_stat_trend(data, selected_stat, player, mode, per_90_stats):
     if mode == 'Match Stats':
         # Extract stats for selected player per match
-        player_data = data[data['Player'] == player].set_index('Match')[[selected_stat]].reset_index()
+        player_data = data[data['Player'] == player].set_index('Match')[selected_stat].reset_index()
         title = f"{selected_stat.replace('_', ' ').capitalize()} Trend for {player} Across Matches"
     else:
         # Extract per 90 stats for selected player per match
-        player_data = data[data['Player'] == player].set_index('Match')[[f"{selected_stat} (per 90)"]].reset_index()
+        player_data = per_90_stats[per_90_stats.index == player][selected_stat].reset_index()
         title = f"{selected_stat.replace('_', ' ').capitalize()} (Per 90) Trend for {player} Across Matches"
-        selected_stat = f"{selected_stat} (per 90)"
 
     fig = px.bar(player_data, x='Match', y=selected_stat, 
-                 title=title, 
-                 labels={selected_stat: f'{selected_stat.replace("_", " ").capitalize()}', 'Match': 'Matches'})
+                  title=title, 
+                  labels={selected_stat: f'{selected_stat.replace("_", " ").capitalize()}', 'Match': 'Matches'})
     
     fig.update_layout(
         height=400,
@@ -388,11 +388,11 @@ def main():
 
                     # Player Stat Trend with Stat Selector
                     st.header("Player Stat Trend Across Matches")
-                    player = st.selectbox("Select player:", combined_stats.index.get_level_values('Player').unique().tolist())
+                    player = st.selectbox("Select player:", combined_stats.index.tolist())
                     player_stat = st.selectbox("Select the statistic for the player:", available_stats)
                     player_mode = st.radio("Select Player Mode:", ['Match Stats', 'Per 90 Stats'])
 
-                    player_stat_fig = plot_player_stat_trend(combined_stats, player_stat, player, player_mode)
+                    player_stat_fig = plot_player_stat_trend(data, player_stat, player, player_mode, per_90_stats)
                     if player_stat_fig is not None:
                         st.plotly_chart(player_stat_fig, use_container_width=True)
 
@@ -404,7 +404,7 @@ def main():
 
                     # Radar Chart Section
                     st.header("Player Comparison")
-                    players = combined_stats.index.get_level_values('Player').unique().tolist()
+                    players = combined_stats.index.tolist()
                     player1 = st.selectbox("Select first player:", players)
                     player2 = st.selectbox("Select second player:", players, index=1)
 
