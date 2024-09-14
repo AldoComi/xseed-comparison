@@ -13,16 +13,12 @@ def load_css(mode):
             background-color: #0e1117;
             color: white;
         }}
-        /* Changing multiselect dropdown tag color */
         .stMultiSelect [role="listbox"] > div[data-baseweb="tag"] {{
-            background-color: #00a9e0 !important;  /* Custom tag color */
-            color: white !important;               /* Custom text color */
+            background-color: #00a9e0 !important;
+            color: white !important;
         }}
         .stMultiSelect [role="listbox"] > div[data-baseweb="tag"] > div {{
-            color: white !important;  /* Ensure text color inside tag remains white */
-        }}
-        .stMultiSelect [role="listbox"] > div {{
-            background-color: #2b3035 !important;  /* Dropdown background */
+            color: white !important;
         }}
         .stButton>button {{
             background-color: #00A9E0;
@@ -37,16 +33,12 @@ def load_css(mode):
             background-color: #f8f9fa;
             color: black;
         }}
-        /* Changing multiselect dropdown tag color */
         .stMultiSelect [role="listbox"] > div[data-baseweb="tag"] {{
-            background-color: #00a9e0 !important;  /* Custom tag color */
-            color: white !important;               /* Custom text color */
+            background-color: #00a9e0 !important;
+            color: white !important;
         }}
         .stMultiSelect [role="listbox"] > div[data-baseweb="tag"] > div {{
-            color: white !important;  /* Ensure text color inside tag remains white */
-        }}
-        .stMultiSelect [role="listbox"] > div {{
-            background-color: #ffffff !important;  /* Dropdown background */
+            color: white !important;
         }}
         .stButton>button {{
             background-color: #007bff;
@@ -55,30 +47,40 @@ def load_css(mode):
         </style>
         """, unsafe_allow_html=True)
 
-# Function to load data
-def load_data(file):
-    try:
-        df = pd.read_csv(file)
-        required_columns = ['Player', 'Minutes']
-        if not all(col in df.columns for col in required_columns):
-            st.error(f"CSV file must contain at least these columns: {', '.join(required_columns)}")
+# Function to load data from multiple CSVs and merge them into one DataFrame
+def load_data(files):
+    cumulative_df = pd.DataFrame()
+    
+    for file in files:
+        try:
+            df = pd.read_csv(file)
+            required_columns = ['Player', 'Minutes']
+            if not all(col in df.columns for col in required_columns):
+                st.error(f"CSV file '{file.name}' must contain at least these columns: {', '.join(required_columns)}")
+                return None
+            cumulative_df = pd.concat([cumulative_df, df])
+        except Exception as e:
+            st.error(f"Error loading data from '{file.name}': {str(e)}")
             return None
-        return df
-    except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
-        return None
+    
+    return cumulative_df
 
-# Function to calculate stats
+# Function to calculate cumulative and P90 stats across all matches
 def calculate_stats(df, non_cumulative_cols):
     try:
         cumulative_df = df.drop(columns=non_cumulative_cols)
         non_cumulative_df = df[['Player'] + non_cumulative_cols]
         
+        # Cumulative Stats: Summing values across all matches
         cumulative_stats = cumulative_df.groupby('Player').sum(numeric_only=True)
+        
+        # Non-Cumulative Stats: Averaging the non-cumulative columns
         non_cumulative_stats = non_cumulative_df.groupby('Player').mean()
         
+        # Merging cumulative and non-cumulative stats
         combined_stats = pd.concat([cumulative_stats, non_cumulative_stats], axis=1)
         
+        # Calculating per-90 stats based on total cumulative minutes
         minutes_played = combined_stats['Minutes']
         per_90_stats = combined_stats.copy()
         per_90_cols = [col for col in cumulative_stats.columns if col not in non_cumulative_cols]
@@ -100,16 +102,16 @@ def get_stat_type(col_name, non_cumulative_cols):
     else:
         return f"{col_name} (per 90)"
 
-# Function to plot Plotly radar chart with hover info
+# Function to plot radar chart using Plotly
 def plot_radar_chart_plotly(player1, player2, stats, attributes, per_90_stats):
     try:
         percentile_stats = calculate_percentiles(stats)
         
-        categories = attributes + [attributes[0]]  # Repeat the first category for closure
+        categories = attributes + [attributes[0]]  # Closing the radar chart
         player1_values = percentile_stats.loc[player1, attributes].values.tolist() + [percentile_stats.loc[player1, attributes].values[0]]
         player2_values = percentile_stats.loc[player2, attributes].values.tolist() + [percentile_stats.loc[player2, attributes].values[0]]
         
-        # Custom hover data
+        # Custom hover data for radar chart
         player1_hover = [
             f"Original: {stats.loc[player1, attr]:.2f}<br>Per 90: {per_90_stats.loc[player1, attr]:.2f}<br>Percentile: {percentile_stats.loc[player1, attr]:.2f}"
             for attr in attributes
@@ -119,12 +121,12 @@ def plot_radar_chart_plotly(player1, player2, stats, attributes, per_90_stats):
             for attr in attributes
         ]
 
-        player1_hover += [player1_hover[0]]  # Close hover data for loop
+        player1_hover += [player1_hover[0]]  # Closing hover data for radar chart
         player2_hover += [player2_hover[0]]
 
         fig = go.Figure()
 
-        # Add traces for both players
+        # Add radar traces for both players
         fig.add_trace(go.Scatterpolar(
             r=player1_values,
             theta=categories,
@@ -144,7 +146,7 @@ def plot_radar_chart_plotly(player1, player2, stats, attributes, per_90_stats):
             line_color="#1CD097",
         ))
 
-        # Update layout for transparent background
+        # Layout for radar chart with transparent background
         fig.update_layout(
             polar=dict(
                 bgcolor='rgba(0,0,0,0)',
@@ -282,10 +284,12 @@ def main():
 
     st.title("XSEED Analytics App")
 
-    uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
-    if uploaded_file is not None:
+    # Allow the user to upload up to 40 CSV files
+    uploaded_files = st.file_uploader("Upload up to 40 CSV files", type="csv", accept_multiple_files=True)
+
+    if uploaded_files and len(uploaded_files) <= 40:
         try:
-            data = load_data(uploaded_file)
+            data = load_data(uploaded_files)
             if data is not None:
                 non_cumulative_cols = [
                     'max_speed', 'Max Shot Power (km/h)', 'technical_load',
@@ -303,12 +307,6 @@ def main():
                         st.dataframe(combined_stats)
                     else:
                         st.dataframe(per_90_stats)
-
-                    # Distance Covered Breakdown chart
-                    st.header("Distance Covered Breakdown")
-                    distance_fig = plot_distance_breakdown(data)
-                    if distance_fig is not None:
-                        st.plotly_chart(distance_fig, use_container_width=True)
 
                     # Radar Chart Section
                     st.header("Player Comparison")
@@ -368,7 +366,7 @@ def main():
 
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
-            st.stop()  # To avoid the app from running further and encountering additional errors
+            st.stop()
 
 if __name__ == "__main__":
     main()
