@@ -352,7 +352,7 @@ def main():
 
                     # Team Stat Trend with Stat Selector
                     st.header("Team Stat Trend Across Matches")
-                    available_stats = ['km_covered', 'sprints_distance', 'max_speed']  # Add more stats as needed
+                    available_stats = ['km_covered', 'Sprints Distance (m)', 'High Intensity Running (m) (>18 km/h)', 'xG', 'xT', 'shots_sx', 'shots_dx','passes_sx','passes_dx']  # Add more stats as needed
                     selected_stat = st.selectbox("Select the statistic to view:", available_stats)
                     mode = st.radio("Select Mode:", ['Total Stats', 'Per Player'])
 
