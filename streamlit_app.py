@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import plotly.express as px
+import plotly.graph_objects as go
 
 # Function to load CSS based on mode
 def load_css(mode):
@@ -96,51 +96,64 @@ def get_stat_type(col_name, non_cumulative_cols):
     else:
         return f"{col_name} (per 90)"
 
-# Function to plot radar chart with transparent background
-def plot_radar_chart(player1, player2, stats, attributes):
+# Function to plot Plotly radar chart with hover info
+def plot_radar_chart_plotly(player1, player2, stats, attributes, per_90_stats):
     try:
         percentile_stats = calculate_percentiles(stats)
         
-        values1 = percentile_stats.loc[player1, attributes].values.flatten().tolist()
-        values2 = percentile_stats.loc[player2, attributes].values.flatten().tolist()
+        categories = attributes + [attributes[0]]  # Repeat the first category for closure
+        player1_values = percentile_stats.loc[player1, attributes].values.tolist() + [percentile_stats.loc[player1, attributes].values[0]]
+        player2_values = percentile_stats.loc[player2, attributes].values.tolist() + [percentile_stats.loc[player2, attributes].values[0]]
         
-        values1 += values1[:1]
-        values2 += values2[:1]
-        
-        angles = [n / float(len(attributes)) * 2 * np.pi for n in range(len(attributes))]
-        angles += angles[:1]
+        # Custom hover data
+        player1_hover = [
+            f"Original: {stats.loc[player1, attr]:.2f}<br>Per 90: {per_90_stats.loc[player1, attr]:.2f}<br>Percentile: {percentile_stats.loc[player1, attr]:.2f}"
+            for attr in attributes
+        ]
+        player2_hover = [
+            f"Original: {stats.loc[player2, attr]:.2f}<br>Per 90: {per_90_stats.loc[player2, attr]:.2f}<br>Percentile: {percentile_stats.loc[player2, attr]:.2f}"
+            for attr in attributes
+        ]
 
-        fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection='polar'))
-        fig.patch.set_alpha(0.0)  # Set figure background to transparent
-        ax.patch.set_alpha(0.0)   # Set axes background to transparent
-        
-        # Plot the lines and fill areas
-        ax.plot(angles, values1, 'o-', linewidth=2, label=player1, color='#00A9E0')
-        ax.fill(angles, values1, alpha=0.25, color='#00A9E0')
-        ax.plot(angles, values2, 'o-', linewidth=2, label=player2, color='#1CD097')
-        ax.fill(angles, values2, alpha=0.25, color='#1CD097')
+        player1_hover += [player1_hover[0]]  # Close hover data for loop
+        player2_hover += [player2_hover[0]]
 
-        # Setting the labels and grid
-        ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(attributes, color='white')
-        ax.set_ylim(0, 100)
-        ax.set_yticks([20, 40, 60, 80, 100])
-        ax.set_yticklabels(['20th', '40th', '60th', '80th', '100th'])
+        fig = go.Figure()
 
-        plt.setp(ax.get_yticklabels(), color='white', fontname='Montserrat')
-        plt.setp(ax.get_xticklabels(), color='white', fontname='Montserrat')
-        
-        # Set legend with white text color
-        legend = plt.legend(loc='upper right', bbox_to_anchor=(0.1, 0.1))
-        plt.setp(legend.get_texts(), color='black', fontname='Montserrat')
+        # Add traces for both players
+        fig.add_trace(go.Scatterpolar(
+            r=player1_values,
+            theta=categories,
+            fill='toself',
+            name=player1,
+            hovertext=player1_hover,
+            hoverinfo="text",
+            line_color="#00A9E0",
+        ))
+        fig.add_trace(go.Scatterpolar(
+            r=player2_values,
+            theta=categories,
+            fill='toself',
+            name=player2,
+            hovertext=player2_hover,
+            hoverinfo="text",
+            line_color="#1CD097",
+        ))
 
-        # Set the title of the chart
-        plt.title(f"Percentile Comparison: {player1} vs {player2}", fontsize=16, fontweight='bold', color='white', fontname='Montserrat')
+        # Update layout for transparent background
+        fig.update_layout(
+            polar=dict(
+                bgcolor='rgba(0,0,0,0)',
+                radialaxis=dict(visible=True, range=[0, 100], showline=True, showgrid=True),
+                angularaxis=dict(tickfont=dict(size=12, color='white')),
+            ),
+            showlegend=True,
+            legend=dict(font=dict(color='white')),
+            font=dict(color='white'),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+        )
 
-        # Grid color
-        ax.grid(color='gray', alpha=0.5)
-        ax.spines['polar'].set_visible(False)
-        
         return fig
     except Exception as e:
         st.error(f"Error plotting radar chart: {str(e)}")
@@ -325,9 +338,9 @@ def main():
                             })
                             st.write(comparison)
 
-                            fig = plot_radar_chart(player1, player2, per_90_stats, attributes)
+                            fig = plot_radar_chart_plotly(player1, player2, combined_stats, attributes, per_90_stats)
                             if fig is not None:
-                                st.pyplot(fig)
+                                st.plotly_chart(fig)
 
                     st.header("Interactive Scatter Plot Comparison")
                     x_var_options = attribute_options
@@ -355,5 +368,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
