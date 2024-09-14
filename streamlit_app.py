@@ -132,7 +132,7 @@ def plot_radar_chart(player1, player2, stats, attributes):
         
         # Set legend with white text color
         legend = plt.legend(loc='upper right', bbox_to_anchor=(0.1, 0.1))
-        plt.setp(legend.get_texts(), color='white', fontname='Montserrat')
+        plt.setp(legend.get_texts(), color='black', fontname='Montserrat')
 
         # Set the title of the chart
         plt.title(f"Percentile Comparison: {player1} vs {player2}", fontsize=16, fontweight='bold', color='white', fontname='Montserrat')
