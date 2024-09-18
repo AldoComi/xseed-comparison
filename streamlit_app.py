@@ -390,7 +390,7 @@ def main():
                     st.header("Player Stat Trend Across Matches")
                     player = st.selectbox("Select player:", combined_stats.index.tolist())
                     player_stat = st.selectbox("Select the statistic for the player:", available_stats)
-                    player_mode = st.radio("Select Player Mode:", ['Match Stats', 'Per 90 Stats'])
+                    player_mode = st.radio("Select Player Mode:", ['Match Stats'])
 
                     player_stat_fig = plot_player_stat_trend(data, player_stat, player, player_mode, per_90_stats)
                     if player_stat_fig is not None:
