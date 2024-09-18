@@ -380,7 +380,7 @@ def main():
                     st.header("Team Stat Trend Across Matches")
                     available_stats = ['km_covered', 'Sprints Distance (m)', 'High Intensity Running (m) (> 18 km/h)', 'xG', 'xT', 'shots_sx', 'shots_dx','passes_sx','passes_dx']  # Add more stats as needed
                     selected_stat = st.selectbox("Select the statistic to view:", available_stats)
-                    mode = st.radio("Select Mode:", ['Total Stats', 'Per Player'])
+                    mode = st.radio("Select Mode:", ['Total Stats', 'Per Player (per Half)'])
 
                     team_stat_fig = plot_team_stat_trend(data, selected_stat, mode)
                     if team_stat_fig is not None:
